@@ -5,7 +5,7 @@ var svgHeight = 500;
 var margin = {
   top: 20,
   right: 40,
-  bottom: 60,
+  bottom: 90,
   left: 100
 };
 
@@ -13,7 +13,7 @@ var width = svgWidth - margin.left - margin.right;
 var height = svgHeight - margin.top - margin.bottom;
 
 // Create an SVG wrapper, append an SVG group that will hold our chart, and shift the latter by left and top margins.
-var svg = d3.select(".scatter")
+var svg = d3.select("#scatter")
   .append("svg")
   .attr("width", svgWidth)
   .attr("height", svgHeight);
@@ -49,12 +49,27 @@ function renderAxes(newXScale, xAxis) {
 
 // function to update circle group and transition to new circles
 function renderCircles(circlesGroup, newXScale, chosenXAxis) {
+    console.log(52)
+    d3.selectAll("circle").each(function() {
+        d3
+          .select(this)
+          .transition()
+          .attr("cx", function(d) {
+            return newXScale(d[chosenXAxis]);
+          })
+          .duration(300);
+      });
 
-    circlesGroup.transition()
-        .duration(1000)
-        .attr("cx", d => newXScale(d[chosenXAxis]));
+      d3.selectAll(".state").each(function() {
+        d3
+          .select(this)
+          .transition()
+          .attr("x", function(d) {
+            return newXScale(d[chosenXAxis]);
+          })
+          .duration(300);
+      });
 
-    return circlesGroup;
 }
 
 // function to update circles group w/ new tooltip
@@ -79,15 +94,15 @@ function updateToolTip(chosenXAxis, circlesGroup) {
             return (`${d.state}<br>${label} ${d[chosenXAxis]}`);
         });
 
-    circlesGroup.call(toolTip);
+    svg.call(toolTip);
 
-    circlesGroup.on("mouseover", function(data) {
-        toolTip.show(data);
-    })
-        // mouseout
-        .on("mouseout", function(data, index) {
-            toolTip.hide(data);
-        });
+    // circlesGroup.on("mouseover", function(data) {
+    //     toolTip.show(data);
+    // })
+    //     // mouseout
+    //     .on("mouseout", function(data, index) {
+    //         toolTip.hide(data);
+    //     });
 
     return circlesGroup;
 }
@@ -114,7 +129,7 @@ d3.csv("data.csv").then(function(healthData, err) {
       .domain([0, d3.max(healthData, d => d.obesity)])
       .range([height, 0]);
 
-    // initial axisgit git  functions
+    // initial axis functions
     var bottomAxis = d3.axisBottom(xLinearScale);
     var leftAxis = d3.axisLeft(yLinearScale);
 
@@ -128,20 +143,46 @@ d3.csv("data.csv").then(function(healthData, err) {
     chartGroup.append("g")
       .call(leftAxis);
 
+      label = "% in Poverty";
+
+      var toolTip = d3.tip()
+      .attr("class", "tooltip")
+      .offset([80, -60])
+      .html(function(d) {
+          return (`${d.state}<br>${label} ${d[chosenXAxis]}`);
+      });
+
+  svg.call(toolTip);
+
     // append intial circles
     var circlesGroup = chartGroup.selectAll("circle")
       .data(healthData)
-      .enter()
+      .enter();
+
+    circlesGroup
+      .append("text")
+      .classed("state", true)
+      .attr("x", d => xLinearScale(d[chosenXAxis]))
+      .attr("y", d => yLinearScale(d.obesity))
+      .text(function(d){return d.abbr});
+      
+    circlesGroup
       .append("circle")
       .attr("cx", d => xLinearScale(d[chosenXAxis]))
       .attr("cy", d => yLinearScale(d.obesity))
       .attr("r", 20)
       .attr("fill", "orange")
-      .attr("opacity", ".5");
+      .attr("opacity", ".5")
+      .on("mouseover", function(data) {
+        toolTip.show(data);
+    })
+        // mouseout
+        .on("mouseout", function(data, index) {
+            toolTip.hide(data);
+        });
 
-    chartGroup.append("text")
-      .attr("dx", function(d){return -20})
-      .text(function(d){return d.abbr});
+        
+
 
     // group for three x-axis labels
     var xLabelsGroup = chartGroup.append("g")
@@ -150,7 +191,7 @@ d3.csv("data.csv").then(function(healthData, err) {
     var povertyLabel = xLabelsGroup.append("text")
       .attr("x", 0)
       .attr("y", 20)
-      .attr("value", "obesity") // value to grab listener
+      .attr("value", "poverty") // value to grab listener
       .classed("inactive", true)
       .text("In Poverty (%)");
 
@@ -189,20 +230,18 @@ d3.csv("data.csv").then(function(healthData, err) {
               // replace chosenXAxis with value
               chosenXAxis = value;
 
-              console.log(chosenXAxis)
-
               // update x scale for new data
               xLinearScale = xScale(healthData, chosenXAxis);
-
+              
               // update circles with new x values
               xAxis = renderAxes(xLinearScale, xAxis);
-
+            
               // update x-axis with transition
               circlesGroup = renderCircles(circlesGroup, xLinearScale, chosenXAxis);
-
+              
               // update circles with new info
               circlesGroup = updateToolTip(chosenXAxis, circlesGroup);
-
+              
               // change classes to change bold text
               if (chosenXAxis === "poverty") {
                   povertyLabel

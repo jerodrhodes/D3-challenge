@@ -126,7 +126,7 @@ d3.csv("data.csv").then(function(healthData, err) {
 
     // y scale function
     var yLinearScale = d3.scaleLinear()
-      .domain([0, d3.max(healthData, d => d.obesity)])
+      .domain([20, d3.max(healthData, d => d.obesity)])
       .range([height, 0]);
 
     // initial axis functions
@@ -170,7 +170,7 @@ d3.csv("data.csv").then(function(healthData, err) {
       .append("circle")
       .attr("cx", d => xLinearScale(d[chosenXAxis]))
       .attr("cy", d => yLinearScale(d.obesity))
-      .attr("r", 20)
+      .attr("r", 15)
       .attr("fill", "orange")
       .attr("opacity", ".5")
       .on("mouseover", function(data) {
